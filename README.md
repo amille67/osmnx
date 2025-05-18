@@ -23,6 +23,8 @@ First read the [Getting Started](https://osmnx.readthedocs.io/en/stable/getting-
 
 Then work through the [Examples Gallery](https://github.com/gboeing/osmnx-examples) for step-by-step tutorials and sample code.
 
+Note that Matplotlib's ``widgets.RadioButtons`` work in headless environments, but the interactive toggles will not appear in static image files.
+
 ## Installation
 
 Follow the [Installation](https://osmnx.readthedocs.io/en/stable/installation.html) guide to install OSMnx.

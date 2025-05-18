@@ -21,6 +21,7 @@ from . import projection
 from . import settings
 from . import utils
 from . import utils_geo
+from . import graph
 
 if TYPE_CHECKING:
     import geopandas as gpd
@@ -31,6 +32,7 @@ try:
     from matplotlib import cm
     from matplotlib import colormaps
     from matplotlib import colors
+    from matplotlib.widgets import RadioButtons
     from matplotlib.axes._axes import Axes  # noqa: TC002
     from matplotlib.figure import Figure  # noqa: TC002
     from matplotlib.projections.polar import PolarAxes  # noqa: TC002
@@ -801,9 +803,96 @@ def plot_orientation(  # noqa: PLR0913
         alpha=alpha,
     )
 
+
     if title:
         ax.set_title(title, y=title_y, fontdict=title_font)
     fig.tight_layout()
+    return fig, ax
+
+
+def plot_heatmap_from_csv(
+    filepath: str | Path,
+    *,
+    lat_col: str = "lat",
+    lon_col: str = "lon",
+    value_col: str | None = None,
+    hex_bins: int | tuple[int, int] = 100,
+    distance_bins: list[float] | None = None,
+    cmap: str = "magma",
+    bbox: tuple[float, float, float, float] | None = None,
+    padding: float = 0.02,
+    figsize: tuple[int, int] = (8, 8),
+    alpha: float = 0.6,
+    background_graph: str | nx.MultiDiGraph | None = None,
+    save: bool = False,
+    filepath_out: str | Path | None = None,
+    dpi: int = 300,
+) -> tuple[Figure, Axes]:
+    """Plot a hexbin heatmap or distance rings from a CSV of points."""
+
+    _verify_mpl()
+    import geopandas as gpd
+
+    if hex_bins and distance_bins:
+        msg = "`hex_bins` and `distance_bins` are mutually exclusive"
+        raise ValueError(msg)
+
+    df = pd.read_csv(filepath)
+    if lat_col not in df.columns or lon_col not in df.columns:
+        msg = "CSV file must contain lat/lon columns"
+        raise KeyError(msg)
+
+    gdf = gpd.GeoDataFrame(
+        df,
+        geometry=gpd.points_from_xy(df[lon_col], df[lat_col]),
+        crs="epsg:4326",
+    )
+
+    if distance_bins and gdf.crs.to_epsg() == 4326:
+        gdf = projection.project_gdf(gdf)
+
+    fig, ax = _get_fig_ax(ax=None, figsize=figsize, bgcolor="#111111", polar=False)
+
+    if isinstance(background_graph, str):
+        if bbox is None:
+            bbox = tuple(gdf.total_bounds)
+        G_bg = graph.graph_from_bbox(bbox, network_type=background_graph)
+        plot_graph(G_bg, ax=ax, show=False, close=False, save=False)
+    elif isinstance(background_graph, nx.MultiDiGraph):
+        plot_graph(background_graph, ax=ax, show=False, close=False, save=False)
+
+    if distance_bins:
+        colors = get_colors(len(distance_bins), cmap=cmap)
+        labels = []
+        collections = []
+        for r, color in zip(sorted(distance_bins), colors):
+            radius = r * 1609.344
+            ring = gdf.buffer(radius).dissolve()
+            ring.plot(ax=ax, facecolor=color, edgecolor="none", alpha=alpha)
+            collections.append(ax.collections[-1])
+            labels.append(f"{r} mi")
+        for coll in collections[1:]:
+            coll.set_visible(False)
+        radio_ax = fig.add_axes([0.01, 0.4, 0.1, 0.2])
+        radio = RadioButtons(radio_ax, labels)
+
+        def toggle(label: str) -> None:
+            for coll, lbl in zip(collections, labels):
+                coll.set_visible(lbl == label)
+            fig.canvas.draw_idle()
+
+        radio.on_clicked(toggle)
+
+    else:
+        x = gdf[lon_col]
+        y = gdf[lat_col]
+        weights = gdf[value_col] if value_col else None
+        ax.hexbin(x, y, C=weights, gridsize=hex_bins, cmap=cmap, alpha=alpha)
+
+    if bbox is None:
+        bbox = tuple(gdf.total_bounds)
+    ax = _config_ax(ax, gdf.crs, bbox, padding)  # type: ignore[arg-type]
+    fig, ax = _save_and_show(fig=fig, ax=ax, show=True, close=False, save=save, filepath=filepath_out, dpi=dpi)
     return fig, ax
 
 

@@ -133,6 +133,16 @@ Visualization
 
 You can plot graphs, routes, network figure-ground diagrams, building footprints, and street network orientation rose diagrams (aka, polar histograms) with the :code:`plot` module. You can also explore street networks, routes, or geospatial features as interactive `Folium`_ web maps.
 
+.. code-block:: python
+
+   # density heatmap
+   ox.plot_heatmap_from_csv("bike_crashes.csv", hex_bins=50)
+
+.. code-block:: python
+
+   # proximity rings
+   ox.plot_heatmap_from_csv("bike_crashes.csv", distance_bins=[3, 5, 10])
+
 Read more about the :ref:`plot <osmnx-plot-module>` module in the User Reference.
 
 Usage Limits

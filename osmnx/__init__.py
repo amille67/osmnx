@@ -40,6 +40,7 @@ from .plot import plot_graph as plot_graph
 from .plot import plot_graph_route as plot_graph_route
 from .plot import plot_graph_routes as plot_graph_routes
 from .plot import plot_orientation as plot_orientation
+from .plot import plot_heatmap_from_csv as plot_heatmap_from_csv
 from .projection import project_graph as project_graph
 from .routing import add_edge_speeds as add_edge_speeds
 from .routing import add_edge_travel_times as add_edge_travel_times

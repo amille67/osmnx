@@ -423,6 +423,11 @@ def test_plots() -> None:
 
     # figure-ground plots
     fig, ax = ox.plot_figure_ground(G=G)
+    csv_path = Path("tests/input_data/test_points.csv")
+    fig, ax = ox.plot_heatmap_from_csv(csv_path, hex_bins=10)
+    plt.close(fig)
+    fig, ax = ox.plot_heatmap_from_csv(csv_path, distance_bins=[1])
+    plt.close(fig)
 
 
 @pytest.mark.xdist_group(name="group1")

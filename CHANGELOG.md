@@ -3,6 +3,7 @@
 ## 2.0.4 (TBD)
 
 - fix bug in features module when elements have pre-existing geometry tags (#1298)
+- add plot.plot_heatmap_from_csv function with hexbin and distance ring options (#XXXX)
 
 ## 2.0.3 (2025-05-06)
 
